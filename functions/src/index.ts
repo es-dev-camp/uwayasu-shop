@@ -19,14 +19,9 @@ const app = new App({
   receiver: expressReceiver,
   token: config.slack.bot_token
 });
-// app.error(console.log);
+app.error(console.log);
 
-app.command('/echo-from-firebase', async ({ command, ack, say }) => {
-  ack();
-  say(`You said "${command.text}"`);
-});
-
-app.message('menu', ({ message, say }) => {
+app.message(/^menu$/, ({ message, say }) => {
   const responce = {
     blocks: [
       {
@@ -107,44 +102,32 @@ app.action('selected_changed', async ({ body, ack, say }) => {
         "text": {
           "type": "mrkdwn",
           "text": `<@${body.user.id}> さん ${selectedItem.text.text} のご購入ありがとうございます\n${document.id}`
-        },
-        "accessory": {
-          "type": "button",
-          "action_id": "cancelbutton_click",
-          "text": {
-            "type": "plain_text",
-            "text": "キャンセル",
-            "emoji": true
-          },
-          "value": document.id
         }
       }
     ]
   } as SayArguments);
 });
 
-app.action('cancelbutton_click', async ({ body, ack, say }) => {
-  ack();
-
-  const id = (body as any).actions[0].value;
+app.message(/^cancel (.+)$/, async ({ message, context, say }) => {
+  const id = context.matches[0];
   const document = db.collection('journal').doc(id);
   const journal = await document.get();
   if (journal.exists) {
     const data = journal.data();
-    if (data && data.user.id !== body.user.id) {
-      say(`<@${body.user.id}> さん 他の方の購入はキャンセルできません (${id})`);
+    if (data && data.user.id !== message.user) {
+      say(`<@${message.user}> さん 他の方の購入はキャンセルできません (${id})`);
     } else if (data && data.createdAt.seconds < moment().add(-1, 'h').unix()) {
-      say(`<@${body.user.id}> さん 購入から1時間以上経過したためキャンセルできません (${id})`);
+      say(`<@${message.user}> さん 購入から1時間以上経過したためキャンセルできません (${id})`);
     } else {
       await document.delete();
-      say(`<@${body.user.id}> さんの購入をキャンセルしました (${id})`);
+      say(`<@${message.user}> さん 購入をキャンセルしました (${id})`);
     }
   } else {
-    say(`<@${body.user.id}> さんの購入は既にキャンセル済みです (${id})`);
+    say(`既にキャンセル済みです (${id})`);
   }
 });
 
-app.message('bill', async ({ message, say }) => {
+app.message(/^bill$/, async ({ message, say }) => {
   const journals = db.collection('journal');
   const queryRef = journals.where('user.id', '==', message.user);
   const filteredJournals = await queryRef.get();
