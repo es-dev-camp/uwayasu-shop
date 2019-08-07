@@ -109,7 +109,7 @@ app.action('selected_changed', async ({ body, ack, say }) => {
 });
 
 app.message(/^cancel (.+)$/, async ({ message, context, say }) => {
-  const id = context.matches[0];
+  const id = context.matches[1];
   const document = db.collection('journal').doc(id);
   const journal = await document.get();
   if (journal.exists) {
@@ -127,14 +127,57 @@ app.message(/^cancel (.+)$/, async ({ message, context, say }) => {
   }
 });
 
-app.message(/^bill$/, async ({ message, say }) => {
+app.message(/^bill$/, async ({ message, context, say }) => {
+
+  // 購入数をカウント
   const journals = db.collection('journal');
   const queryRef = journals.where('user.id', '==', message.user);
   const filteredJournals = await queryRef.get();
-
   const total = filteredJournals.docs.length;
   const service = Math.floor(total / 4);
-  say(`<@${message.user}> さんの総購入数は${total}本\n合計額は ${(total - service) * 100}円です。`);
+
+
+  const userInfo = await app.client.users.info({
+    token: context.botToken,
+    user: message.user
+  });
+  const deposit = await getTotalDeposit((userInfo as any).user.name);
+
+  say(`<@${message.user}> さんの総購入数は${total.toLocaleString()}本\nお支払額は ${((total - service) * 100 - deposit).toLocaleString()}円です。`);
 });
+
+const administrators = ['U223M954Z'];
+
+app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
+  if (!administrators.includes(message.user)) {
+    say(`<@${message.user}> さん 会計処理は管理者でないと行えません`);
+  }
+  const deposit = Number.parseInt(context.matches[1]);
+  const userName = context.matches[2];
+  console.log(`deposit: ${deposit}, userName: ${userName}`);
+
+  // 入金処理
+  const paidCollection = db.collection('paid');
+  await paidCollection.add({
+    userName: userName,
+    deposit: deposit,
+    createddAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  const depositTotal = deposit + await getTotalDeposit(userName);
+  say(`${userName} さんから${deposit.toLocaleString()}ご入金頂きました。\n入金合計額は${depositTotal.toLocaleString()}円です。`);
+})
+
+async function getTotalDeposit(userName: string) {
+  const paidCollection = db.collection('paid');
+  const queryRef = paidCollection.where('userName', '==', userName);
+  const filteredPaids = await queryRef.get();
+
+  let depositTotal = 0;
+  filteredPaids.docs.forEach(paid => {
+    depositTotal += paid.data().deposit
+  });
+  return depositTotal;
+}
 
 exports.slack = functions.https.onRequest(expressReceiver.app);
