@@ -141,7 +141,7 @@ app.message(/^bill$/, async ({ message, context, say }) => {
     token: context.botToken,
     user: message.user
   });
-  const deposit = await getTotalDeposit((userInfo as any).user.name);
+  const deposit = await getDepositTotal((userInfo as any).user.name);
 
   say(`<@${message.user}> さんの総購入数は${total.toLocaleString()}本\nお支払額は ${((total - service) * 100 - deposit).toLocaleString()}円です。`);
 });
@@ -164,11 +164,11 @@ app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
     createddAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  const depositTotal = deposit + await getTotalDeposit(userName);
+  const depositTotal = await getDepositTotal(userName);
   say(`${userName} さんから${deposit.toLocaleString()}ご入金頂きました。\n入金合計額は${depositTotal.toLocaleString()}円です。`);
 })
 
-async function getTotalDeposit(userName: string) {
+async function getDepositTotal(userName: string) {
   const paidCollection = db.collection('paid');
   const queryRef = paidCollection.where('userName', '==', userName);
   const filteredPaids = await queryRef.get();
