@@ -38,53 +38,57 @@ app.message(/^menu$/, ({ message, say }) => {
         "type": "section",
         "text": {
           "type": "mrkdwn",
-          "text": "料金は1本100円です。 *3本購入で1本サービス！*"
+          "text": "料金は 1本 100円 です。\n *3本購入で1本サービス！*"
         },
         "accessory": {
-          "type": "static_select",
-          "action_id": "selected_changed",
-          "placeholder": {
-            "type": "plain_text",
-            "text": "Select an item",
-            "emoji": true
-          },
-          "options": [
-            {
-              "text": {
-                "type": "plain_text",
-                "text": "ジンジャーエール（茶）辛口",
-                "emoji": true
-              },
-              "value": "item1"
-            },
-            {
-              "text": {
-                "type": "plain_text",
-                "text": "ジンジャーエール（赤）Dry",
-                "emoji": true
-              },
-              "value": "item2"
-            },
-            {
-              "text": {
-                "type": "plain_text",
-                "text": "トニックウォーター（青）",
-                "emoji": true
-              },
-              "value": "item3"
-            }
-          ]
+          "type": "image",
+          "image_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTla__OXLZesYQx3LJejrvFiO2TM73Dh1ouAcZduMxg6HSxzZecWw",
+          "alt_text": "ジンジャーエールのビン"
         }
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "clickItem1",
+            "text": {
+              "type": "plain_text",
+              "emoji": true,
+              "text": "ジンジャーエール（茶）辛口"
+            },
+            "value": "item1"
+          },
+          {
+            "type": "button",
+            "action_id": "clickItem2",
+            "text": {
+              "type": "plain_text",
+              "emoji": true,
+              "text": "ジンジャーエール（赤）Dry"
+            },
+            "value": "item2"
+          },
+          {
+            "type": "button",
+            "action_id": "clickItem3",
+            "text": {
+              "type": "plain_text",
+              "emoji": true,
+              "text": "トニックウォーター（青）"
+            },
+            "value": "item3"
+          }
+        ]
       }
     ]
   };
   say(responce as SayArguments);
 });
 
-app.action('selected_changed', async ({ body, ack, say }) => {
+app.action(/clickItem[1-3]/, async ({ body, ack, say }) => {
   ack();
-
-  const selectedItem = (body as any).actions[0].selected_option;
+  const selectedItem = (body as any).actions[0];
   const journals = db.collection('journal');
   const document = await journals.add({
     user: body.user,
