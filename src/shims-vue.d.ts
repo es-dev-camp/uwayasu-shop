@@ -5,3 +5,4 @@ declare module "*.vue" {
 
 declare module "vuetify/lib/locale/ja";
 declare module "vuetify/lib/util/colors";
+declare module "chart.js";
