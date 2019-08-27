@@ -9,8 +9,14 @@
 
       <v-flex xs12>
         <v-layout justify-center>
-          <simple-bar :data="dataCollection" :width="1024" :height="768">
+          <simple-bar
+            :chart-data="dataCollection"
+            :options="chartOption"
+            :width="1024"
+            :height="768"
+          >
           </simple-bar>
+          <v-btn @click="onUpdateData">更新</v-btn>
         </v-layout>
       </v-flex>
     </v-layout>
@@ -20,6 +26,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import Chart from "chart.js";
+import journal from "@/models/journal";
 import simpleBar from "@/components/bar.vue";
 
 @Component({
@@ -28,39 +35,53 @@ import simpleBar from "@/components/bar.vue";
   }
 })
 export default class HelloWorld extends Vue {
-  chartOption: Chart.ChartOptions = {};
-
-  dataCollection: Chart.ChartData = {
-    labels: [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-      "asdf",
-      "asdfqwer"
-    ],
-    datasets: [
-      {
-        label: "購入本数",
-        backgroundColor: "#45A4E9",
-        data: [40, 20, 12, 39, 10, 40, 39, 80, 40, 20, 12, 11]
-      }
-    ]
+  chartOption: Chart.ChartOptions = {
+    scales: {
+      yAxes: [
+        {
+          ticks: {
+            beginAtZero: true,
+            max: 10
+          },
+          gridLines: {
+            display: true
+          }
+        }
+      ],
+      xAxes: [
+        {
+          ticks: {
+            beginAtZero: true
+          },
+          gridLines: {
+            display: false
+          }
+        }
+      ]
+    },
+    legend: {
+      display: false
+    },
+    responsive: true,
+    maintainAspectRatio: false
   };
+
+  dataCollection: Chart.ChartData = {};
 
   @Prop({
     type: String,
     default: "uwayasu をご利用いただきありがとうございます"
   })
   msg!: string;
+
+  async created() {
+    await this.onUpdateData();
+  }
+
+  async onUpdateData() {
+    const j = new journal();
+    this.dataCollection = await j.getJournalData();
+  }
 }
 </script>
 
