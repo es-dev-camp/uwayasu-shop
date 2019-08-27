@@ -1,8 +1,49 @@
-# uwayasu shop
-
-## Description
+# uwayasu-shop
 
 This app is a slackbot for selling ginger ale.
+
+## Web application 
+
+### Based
+
+- Vue.js
+- TypeScript
+- Vuetify
+
+### project setup
+```
+npm install
+```
+
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
+
+### Compiles and minifies for production
+```
+npm run build
+```
+
+### Run your tests
+```
+npm run test
+```
+
+### Lints and fixes files
+```
+npm run lint
+```
+
+### Run your unit tests
+```
+npm run test:unit
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
+
+## Slack bot application project setup
 
 ### Based
 
@@ -12,7 +53,7 @@ This app is a slackbot for selling ginger ale.
   - Functions
   - Firestore
 
-## Using
+### Using
 
 1. `git clone {this_repository}`
 1. Install Node (and npm)
