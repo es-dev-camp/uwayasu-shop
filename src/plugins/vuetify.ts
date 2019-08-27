@@ -32,7 +32,7 @@ export default new Vuetify({
     current: "ja"
   },
   theme: {
-    dark: true,
+    dark: false,
     themes: {
       light: lightThemeSettings,
       dark: darkThemeSettings

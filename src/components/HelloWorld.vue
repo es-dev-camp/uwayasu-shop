@@ -70,14 +70,25 @@
           </a>
         </v-layout>
       </v-flex>
+      <v-flex xs12 mb-5>
+        <v-layout justify-center>
+          <simple-bar :data="dataCollection"></simple-bar>
+        </v-layout>
+      </v-flex>
     </v-layout>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
+import Chart from "chart.js";
+import simpleBar from "@/components/bar.vue";
 
-@Component
+@Component({
+  components: {
+    simpleBar
+  }
+})
 export default class HelloWorld extends Vue {
   ecosystem: any[] = [
     {
@@ -129,6 +140,30 @@ export default class HelloWorld extends Vue {
       href: "https://vuetifyjs.com/getting-started/frequently-asked-questions"
     }
   ];
+
+  dataCollection: Chart.ChartData = {
+    labels: [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    datasets: [
+      {
+        label: "GitHub Commits",
+        backgroundColor: "#f87979",
+        data: [40, 20, 12, 39, 10, 40, 39, 80, 40, 20, 12, 11]
+      }
+    ]
+  };
 
   @Prop({ type: String, default: "Welcome to Vuetify" }) msg!: string;
 }
