@@ -11,6 +11,9 @@
   "dependencies": {
     "chart.js": "^2.8.0",
     "core-js": "^2.6.5",
+    "firebase": "^6.4.2",
+    "firestore": "^1.1.6",
+    "moment": "^2.24.0",
     "vue": "^2.6.10",
     "vue-chartjs": "^3.4.2",
     "vue-class-component": "^7.0.2",
