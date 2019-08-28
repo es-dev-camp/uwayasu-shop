@@ -13,10 +13,34 @@
             :chart-data="getDailySummary"
             :options="chartOption"
             :width="1024"
-            :height="768"
+            :height="360"
           >
           </simple-bar>
         </v-layout>
+      </v-flex>
+      <v-flex xs12>
+        <v-data-table
+          :headers="headers"
+          :items="getDataSet"
+          item-key="createdAt.seconds"
+          class="elevation-1"
+          sort-by="createdAt"
+          :sort-desc="true"
+          :search="search"
+          :custom-filter="filteredData"
+        >
+          <template v-slot:top>
+            <v-text-field
+              v-model="search"
+              label="Search"
+              class="mx-4"
+            ></v-text-field>
+          </template>
+
+          <template v-slot:item.createdAt="{ item }">
+            {{ item.createdAt | displayDateTime }}
+          </template>
+        </v-data-table>
       </v-flex>
     </v-layout>
   </v-container>
@@ -72,11 +96,29 @@ export default class HelloWorld extends Super {
 
   dataCollection: Chart.ChartData = {};
 
+  get headers() {
+    return [
+      { text: "Datetime", value: "createdAt" },
+      { text: "UserName", value: "user.username" },
+      { text: "Item", value: "item.name" }
+    ];
+  }
+
+  filteredData(value: any, search: string, item: any) {
+    return (
+      value != null &&
+      search != null &&
+      typeof value === "string" &&
+      value.toString().indexOf(search) !== -1
+    );
+  }
+
   @Prop({
     type: String,
     default: "uwayasu をご利用いただきありがとうございます"
   })
   msg!: string;
+  search: string = "";
 }
 </script>
 
