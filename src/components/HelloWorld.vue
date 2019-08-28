@@ -10,14 +10,37 @@
       <v-flex xs12>
         <v-layout justify-center>
           <simple-bar
-            :chart-data="dataCollection"
+            :chart-data="getDailySummary"
             :options="chartOption"
             :width="1024"
-            :height="768"
+            :height="360"
           >
           </simple-bar>
-          <v-btn @click="onUpdateData">更新</v-btn>
         </v-layout>
+      </v-flex>
+      <v-flex xs12>
+        <v-data-table
+          :headers="headers"
+          :items="getDataSet"
+          item-key="createdAt.seconds"
+          class="elevation-1"
+          sort-by="createdAt"
+          :sort-desc="true"
+          :search="search"
+          :custom-filter="filteredData"
+        >
+          <template v-slot:top>
+            <v-text-field
+              v-model="search"
+              label="Search"
+              class="mx-4"
+            ></v-text-field>
+          </template>
+
+          <template v-slot:item.createdAt="{ item }">
+            {{ item.createdAt | displayDateTime }}
+          </template>
+        </v-data-table>
       </v-flex>
     </v-layout>
   </v-container>
@@ -26,15 +49,20 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import Chart from "chart.js";
-import journal from "@/models/journal";
+import { journalModule } from "@/modules/journalModule";
 import simpleBar from "@/components/bar.vue";
+
+const Super = Vue.extend({
+  methods: journalModule.mapActions(["detouch"]),
+  computed: journalModule.mapGetters(["getDataSet", "getDailySummary"])
+});
 
 @Component({
   components: {
     simpleBar
   }
 })
-export default class HelloWorld extends Vue {
+export default class HelloWorld extends Super {
   chartOption: Chart.ChartOptions = {
     scales: {
       yAxes: [
@@ -68,20 +96,29 @@ export default class HelloWorld extends Vue {
 
   dataCollection: Chart.ChartData = {};
 
+  get headers() {
+    return [
+      { text: "Datetime", value: "createdAt" },
+      { text: "UserName", value: "user.username" },
+      { text: "Item", value: "item.name" }
+    ];
+  }
+
+  filteredData(value: any, search: string, item: any) {
+    return (
+      value != null &&
+      search != null &&
+      typeof value === "string" &&
+      value.toString().indexOf(search) !== -1
+    );
+  }
+
   @Prop({
     type: String,
     default: "uwayasu をご利用いただきありがとうございます"
   })
   msg!: string;
-
-  async created() {
-    await this.onUpdateData();
-  }
-
-  async onUpdateData() {
-    const j = new journal();
-    this.dataCollection = await j.getJournalData();
-  }
+  search: string = "";
 }
 </script>
 
