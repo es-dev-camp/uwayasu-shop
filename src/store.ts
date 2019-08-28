@@ -1,10 +1,12 @@
-import Vue from "vue";
-import Vuex from "vuex";
+import { Module, createStore as cs } from "vuex-smart-module";
+import { journalModule } from "@/modules/journalModule";
 
-Vue.use(Vuex);
+export function createStore() {
+  const rootModule = new Module({
+    modules: {
+      journalModule
+    }
+  });
 
-export default new Vuex.Store({
-  state: {},
-  mutations: {},
-  actions: {}
-});
+  return cs(rootModule);
+}

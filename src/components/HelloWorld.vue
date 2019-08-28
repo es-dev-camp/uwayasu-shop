@@ -10,13 +10,12 @@
       <v-flex xs12>
         <v-layout justify-center>
           <simple-bar
-            :chart-data="dataCollection"
+            :chart-data="getDailySummary"
             :options="chartOption"
             :width="1024"
             :height="768"
           >
           </simple-bar>
-          <v-btn @click="onUpdateData">更新</v-btn>
         </v-layout>
       </v-flex>
     </v-layout>
@@ -26,15 +25,20 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import Chart from "chart.js";
-import journal from "@/models/journal";
+import { journalModule } from "@/modules/journalModule";
 import simpleBar from "@/components/bar.vue";
+
+const Super = Vue.extend({
+  methods: journalModule.mapActions(["detouch"]),
+  computed: journalModule.mapGetters(["getDataSet", "getDailySummary"])
+});
 
 @Component({
   components: {
     simpleBar
   }
 })
-export default class HelloWorld extends Vue {
+export default class HelloWorld extends Super {
   chartOption: Chart.ChartOptions = {
     scales: {
       yAxes: [
@@ -73,15 +77,6 @@ export default class HelloWorld extends Vue {
     default: "uwayasu をご利用いただきありがとうございます"
   })
   msg!: string;
-
-  async created() {
-    await this.onUpdateData();
-  }
-
-  async onUpdateData() {
-    const j = new journal();
-    this.dataCollection = await j.getJournalData();
-  }
 }
 </script>
 

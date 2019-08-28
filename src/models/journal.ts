@@ -5,15 +5,22 @@ import moment from "moment";
 import IJournal from "@/models/IJournal";
 
 export default class journal {
-  async getJournalData(): Promise<Chart.ChartData> {
-    const journalRef = firebase.firestore().collection("journal");
-    const journals = await journalRef.get();
+  private journalsCache: IJournal[] = [];
+  private unsub: () => void = () => {};
 
-    // 取得したジャーナルデータを日付別に集計
+  constructor() {
+    this.sub();
+  }
+
+  get dataSet(): IJournal[] {
+    return this.journalsCache;
+  }
+
+  get dailySummary(): Chart.ChartData {
+    // ジャーナルデータを日付別に集計
     const result: any = {};
-    journals.forEach(j => {
-      const data = j.data() as IJournal;
-      const date = moment.unix(data.createdAt.seconds).format("MM-DD");
+    this.journalsCache.forEach(j => {
+      const date = moment.unix(j.createdAt.seconds).format("MM-DD");
       result[date] = (result[date] || 0) + 1;
     });
 
@@ -35,5 +42,29 @@ export default class journal {
         }
       ]
     };
+  }
+
+  private sub() {
+    let collection = firebase.firestore().collection("journal");
+    this.unsub = collection.onSnapshot(
+      snapshot => {
+        const journalData: IJournal[] = [];
+        snapshot.forEach(j => {
+          journalData.push(j.data() as IJournal);
+        });
+        this.journalsCache = journalData;
+      },
+      err => {
+        // console.log(`Encountered error: ${err}`);
+      }
+    );
+  }
+
+  atouch() {
+    this.sub();
+  }
+
+  detouch() {
+    this.unsub();
   }
 }
