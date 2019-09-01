@@ -9,6 +9,12 @@ class journalGetters extends Getters<journalState> {
   get getDataSet() {
     return this.state.journalCollection.dataSet;
   }
+  get getSearchWord() {
+    return this.state.journalCollection.searchWord;
+  }
+  get getFilterdDataSet() {
+    return this.state.journalCollection.filterdDataSet;
+  }
   get getDailySummary() {
     return this.state.journalCollection.dailySummary;
   }
@@ -20,6 +26,9 @@ class journalMutations extends Mutations<journalState> {
   }
   detouch(_: any) {
     this.state.journalCollection.detouch();
+  }
+  setSearchWord(searchWord: string) {
+    this.state.journalCollection.searchWord = searchWord;
   }
 }
 
@@ -34,6 +43,9 @@ class journalActions extends Actions<
   }
   detouch() {
     this.commit("detouch", null);
+  }
+  setSearchWord(searchWord: string) {
+    this.commit("setSearchWord", searchWord);
   }
 }
 

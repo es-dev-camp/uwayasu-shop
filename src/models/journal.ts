@@ -8,6 +8,8 @@ export default class journal {
   private journalsCache: IJournal[] = [];
   private unsub: () => void = () => {};
 
+  searchWord: string = "";
+
   constructor() {
     this.sub();
   }
@@ -16,10 +18,21 @@ export default class journal {
     return this.journalsCache;
   }
 
+  get filterdDataSet(): IJournal[] {
+    return this.journalsCache
+      ? this.journalsCache.filter(j => {
+          return (
+            j.item.name.toString().indexOf(this.searchWord) !== -1 ||
+            j.user.name.toString().indexOf(this.searchWord) !== -1
+          );
+        })
+      : this.journalsCache;
+  }
+
   get dailySummary(): Chart.ChartData {
     // ジャーナルデータを日付別に集計
     const result: any = {};
-    this.journalsCache.forEach(j => {
+    this.filterdDataSet.forEach(j => {
       const date = moment.unix(j.createdAt.seconds).format("MM-DD");
       result[date] = (result[date] || 0) + 1;
     });
