@@ -101,13 +101,11 @@ app.action(/clickItem[1-3]/, async ({ body, ack, say, context }) => {
           text: `<@${
             body.user.id
           }> さん ${itemName} のご購入ありがとうございます
-            *購入ID:* ${documentId}
+*購入ID:* ${documentId}
 
-            *総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
-            *お支払残額:* ${
-              depositInfo.paymentAmount
-            }円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
-          `
+*総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
+*お支払残額:* ${depositInfo.paymentAmount}円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
+`
         }
       }
     ]
@@ -136,13 +134,11 @@ app.message(/^bill$/, async ({ message, context, say }) => {
   const uwayasu = new shop();
 
   const userInfo = await getUserInfo(context.botToken, message.user);
-  const depositInfo = await uwayasu.getDepositInfo(userInfo.id, userInfo.name);
+  const depositInfo = await uwayasu.getDepositInfo(userInfo);
   say(`<@${userInfo.id}> さん
-    *総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
-    *お支払残額:* ${
-      depositInfo.paymentAmount
-    }円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
-  `);
+*総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
+*お支払残額:* ${depositInfo.paymentAmount}円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
+`);
 });
 
 const administrators = ["U223M954Z"];
