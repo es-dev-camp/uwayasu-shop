@@ -88,6 +88,7 @@ app.action(/clickItem[1-3]/, async ({ body, ack, say, context }) => {
   const uwayasu = new shop();
   const userInfo = await getUserInfo(context.botToken, body.user.id);
   const documentId = await uwayasu.buy(userInfo.id, itemName, itemId);
+  const depositInfo = await uwayasu.getDepositInfo(userInfo.id, userInfo.name);
 
   say({
     blocks: [
@@ -95,7 +96,12 @@ app.action(/clickItem[1-3]/, async ({ body, ack, say, context }) => {
         "type": "section",
         "text": {
           "type": "mrkdwn",
-          "text": `<@${body.user.id}> さん ${selectedItem.text.text} のご購入ありがとうございます\n${document.id}`
+          "text": `<@${body.user.id}> さん ${itemName} のご購入ありがとうございます
+            *購入ID:* ${documentId}
+
+            *総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
+            *お支払残額:* ${depositInfo.paymentAmount}円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
+          `
         }
       }
     ]
