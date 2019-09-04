@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import { App, ExpressReceiver, SayArguments } from "@slack/bolt";
-import { shop, cancelStatus } from "./shop";
+import { shop, IUser, cancelStatus } from "./shop";
 
 const expressReceiver = new ExpressReceiver({
   signingSecret: functions.config().slack.signing_secret,
@@ -89,8 +89,8 @@ app.action(/clickItem[1-3]/, async ({ body, ack, say, context }) => {
 
   const uwayasu = new shop();
   const userInfo = await getUserInfo(context.botToken, body.user.id);
-  const documentId = await uwayasu.buy(userInfo.id, itemName, itemId);
-  const depositInfo = await uwayasu.getDepositInfo(userInfo.id, userInfo.name);
+  const documentId = await uwayasu.buy(userInfo, itemName, itemId);
+  const depositInfo = await uwayasu.getDepositInfo(userInfo);
 
   say({
     blocks: [
@@ -165,19 +165,10 @@ app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
 });
 
 async function getUserInfo(botToken: string, userId: string): Promise<IUser> {
-  const info = await app.client.users.info({
+  return (await app.client.users.info({
     token: botToken,
     user: userId
-  });
-  return {
-    name: (info as any).user.name,
-    id: userId
-  };
-}
-
-export interface IUser {
-  name: string;
-  id: string;
+  }) as any).user;
 }
 
 exports.slack = functions.https.onRequest(expressReceiver.app);

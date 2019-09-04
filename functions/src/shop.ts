@@ -28,16 +28,14 @@ export class shop {
    * @param userId - User Id for deposit
    * @returns Deposit total amount
    */
-  async getDepositInfo(
-    userId: string,
-    userName: string
-  ): Promise<IDepositInfo> {
-    const journals = db.collection("journal");
+  async getDepositInfo(user: IUser): Promise<IDepositInfo> {
+    const journals = db.collection('journal');
+    const queryRef = journals.where('user.id', '==', user.id);
 
     const filteredJournals = await queryRef.get();
     const total = filteredJournals.docs.length;
     const service = Math.floor(total / 4);
-    const deposit = await this.getDepositTotal(userName);
+    const deposit = await this.getDepositTotal(user.name);
 
     return {
       totalPurchases: total,
@@ -68,10 +66,10 @@ export class shop {
    * @param itemId - Purchased item id
    * @returns Document reference id
    */
-  async buy(userId: string, itemName: string, itemId: string): Promise<string> {
+  async buy(user: IUser, itemName: string, itemId: string): Promise<string> {
     const journals = db.collection("journal");
     const ref = await journals.add({
-      user: userId,
+      user: user,
       item: {
         name: itemName,
         id: itemId
@@ -118,6 +116,14 @@ export enum cancelStatus {
   notExist,
   purchaseOfOthers,
   expired
+}
+
+
+export interface IUser {
+  name: string;
+  id: string;
+  team_id: string;
+  username: string;
 }
 
 interface IDepositInfo {
