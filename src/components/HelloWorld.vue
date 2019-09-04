@@ -21,13 +21,12 @@
       <v-flex xs12>
         <v-data-table
           :headers="headers"
-          :items="getDataSet"
+          :items="getFilterdDataSet"
           item-key="createdAt.seconds"
           class="elevation-1"
           sort-by="createdAt"
           :sort-desc="true"
           :search="search"
-          :custom-filter="filteredData"
         >
           <template v-slot:top>
             <v-text-field
@@ -53,8 +52,13 @@ import { journalModule } from "@/modules/journalModule";
 import simpleBar from "@/components/bar.vue";
 
 const Super = Vue.extend({
-  methods: journalModule.mapActions(["detouch"]),
-  computed: journalModule.mapGetters(["getDataSet", "getDailySummary"])
+  methods: journalModule.mapActions(["detouch", "setSearchWord"]),
+  computed: journalModule.mapGetters([
+    "getDataSet",
+    "getSearchWord",
+    "getFilterdDataSet",
+    "getDailySummary"
+  ])
 });
 
 @Component({
@@ -104,13 +108,11 @@ export default class HelloWorld extends Super {
     ];
   }
 
-  filteredData(value: any, search: string, item: any) {
-    return (
-      value != null &&
-      search != null &&
-      typeof value === "string" &&
-      value.toString().indexOf(search) !== -1
-    );
+  get search() {
+    return this.getSearchWord;
+  }
+  set search(value: string) {
+    this.setSearchWord(value);
   }
 
   @Prop({
@@ -118,7 +120,6 @@ export default class HelloWorld extends Super {
     default: "uwayasu をご利用いただきありがとうございます"
   })
   msg!: string;
-  search: string = "";
 }
 </script>
 

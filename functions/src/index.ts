@@ -1,83 +1,78 @@
-import * as functions from 'firebase-functions';
-const config = functions.config();
+import * as functions from "firebase-functions";
+import { App, ExpressReceiver, SayArguments } from "@slack/bolt";
+import { shop, IUser, cancelStatus } from "./shop";
 
-import admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
-
-const db = admin.firestore();
-
-import { App, ExpressReceiver, SayArguments } from '@slack/bolt';
 const expressReceiver = new ExpressReceiver({
-  signingSecret: config.slack.signing_secret,
-  endpoints: '/events'
+  signingSecret: functions.config().slack.signing_secret,
+  endpoints: "/events"
 });
-
-import * as moment from 'moment';
 
 // Initializes your app with your bot token and signing secret
 const app = new App({
   receiver: expressReceiver,
-  token: config.slack.bot_token
+  token: functions.config().slack.bot_token
 });
 app.error(console.log);
 
-app.message(/^menu$/, ({ message, say }) => {
+app.message(/^menu$/, ({ say }) => {
   const responce = {
     blocks: [
       {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": "uwayasu へようこそ!\nお支払いは1,000円単位でお願いします。\n\n *購入したい商品を選択してください。*"
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text:
+            "uwayasu へようこそ!\nお支払いは1,000円単位でお願いします。\n\n *購入したい商品を選択してください。*"
         }
       },
       {
-        "type": "divider"
+        type: "divider"
       },
       {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": "料金は 1本 100円 です。\n *3本購入で1本サービス！*"
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "料金は 1本 100円 です。\n *3本購入で1本サービス！*"
         },
-        "accessory": {
-          "type": "image",
-          "image_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTla__OXLZesYQx3LJejrvFiO2TM73Dh1ouAcZduMxg6HSxzZecWw",
-          "alt_text": "ジンジャーエールのビン"
+        accessory: {
+          type: "image",
+          image_url:
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTla__OXLZesYQx3LJejrvFiO2TM73Dh1ouAcZduMxg6HSxzZecWw",
+          alt_text: "ジンジャーエールのビン"
         }
       },
       {
-        "type": "actions",
-        "elements": [
+        type: "actions",
+        elements: [
           {
-            "type": "button",
-            "action_id": "clickItem1",
-            "text": {
-              "type": "plain_text",
-              "emoji": true,
-              "text": "ジンジャーエール（茶）辛口"
+            type: "button",
+            action_id: "clickItem1",
+            text: {
+              type: "plain_text",
+              emoji: true,
+              text: "ジンジャーエール（茶）辛口"
             },
-            "value": "item1"
+            value: "item1"
           },
           {
-            "type": "button",
-            "action_id": "clickItem2",
-            "text": {
-              "type": "plain_text",
-              "emoji": true,
-              "text": "ジンジャーエール（赤）Dry"
+            type: "button",
+            action_id: "clickItem2",
+            text: {
+              type: "plain_text",
+              emoji: true,
+              text: "ジンジャーエール（赤）Dry"
             },
-            "value": "item2"
+            value: "item2"
           },
           {
-            "type": "button",
-            "action_id": "clickItem3",
-            "text": {
-              "type": "plain_text",
-              "emoji": true,
-              "text": "トニックウォーター（青）"
+            type: "button",
+            action_id: "clickItem3",
+            text: {
+              type: "plain_text",
+              emoji: true,
+              text: "トニックウォーター（青）"
             },
-            "value": "item3"
+            value: "item3"
           }
         ]
       }
@@ -86,26 +81,31 @@ app.message(/^menu$/, ({ message, say }) => {
   say(responce as SayArguments);
 });
 
-app.action(/clickItem[1-3]/, async ({ body, ack, say }) => {
+app.action(/clickItem[1-3]/, async ({ body, ack, say, context }) => {
   ack();
   const selectedItem = (body as any).actions[0];
-  const journals = db.collection('journal');
-  const document = await journals.add({
-    user: body.user,
-    item: {
-      name: selectedItem.text.text,
-      id: selectedItem.value
-    },
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+  const itemName = selectedItem.text.text;
+  const itemId = selectedItem.value;
+
+  const uwayasu = new shop();
+  const userInfo = await getUserInfo(context.botToken, body.user.id);
+  const documentId = await uwayasu.buy(userInfo, itemName, itemId);
+  const depositInfo = await uwayasu.getDepositInfo(userInfo);
 
   say({
     blocks: [
       {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": `<@${body.user.id}> さん ${selectedItem.text.text} のご購入ありがとうございます\n${document.id}`
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `<@${
+            body.user.id
+          }> さん ${itemName} のご購入ありがとうございます
+*購入ID:* ${documentId}
+
+*総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
+*お支払残額:* ${depositInfo.paymentAmount}円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
+`
         }
       }
     ]
@@ -114,43 +114,34 @@ app.action(/clickItem[1-3]/, async ({ body, ack, say }) => {
 
 app.message(/^cancel (.+)$/, async ({ message, context, say }) => {
   const id = context.matches[1];
-  const document = db.collection('journal').doc(id);
-  const journal = await document.get();
-  if (journal.exists) {
-    const data = journal.data();
-    if (data && data.user.id !== message.user) {
-      say(`<@${message.user}> さん 他の方の購入はキャンセルできません (${id})`);
-    } else if (data && data.createdAt.seconds < moment().add(-1, 'h').unix()) {
-      say(`<@${message.user}> さん 購入から1時間以上経過したためキャンセルできません (${id})`);
-    } else {
-      await document.delete();
-      say(`<@${message.user}> さん 購入をキャンセルしました (${id})`);
-    }
-  } else {
+
+  const uwayasu = new shop();
+  const result = await uwayasu.cancel(message.user, id);
+  if (result === cancelStatus.success) {
+    say(`<@${message.user}> さん 購入をキャンセルしました (${id})`);
+  } else if (result === cancelStatus.notExist) {
     say(`既にキャンセル済みです (${id})`);
+  } else if (result === cancelStatus.purchaseOfOthers) {
+    say(`<@${message.user}> さん 他の方の購入はキャンセルできません (${id})`);
+  } else if (result === cancelStatus.expired) {
+    say(
+      `<@${message.user}> さん 購入から1時間以上経過したためキャンセルできません (${id})`
+    );
   }
 });
 
 app.message(/^bill$/, async ({ message, context, say }) => {
+  const uwayasu = new shop();
 
-  // 購入数をカウント
-  const journals = db.collection('journal');
-  const queryRef = journals.where('user.id', '==', message.user);
-  const filteredJournals = await queryRef.get();
-  const total = filteredJournals.docs.length;
-  const service = Math.floor(total / 4);
-
-
-  const userInfo = await app.client.users.info({
-    token: context.botToken,
-    user: message.user
-  });
-  const deposit = await getDepositTotal((userInfo as any).user.name);
-
-  say(`<@${message.user}> さんの総購入数は${total.toLocaleString()}本\nお支払額は ${((total - service) * 100 - deposit).toLocaleString()}円です。`);
+  const userInfo = await getUserInfo(context.botToken, message.user);
+  const depositInfo = await uwayasu.getDepositInfo(userInfo);
+  say(`<@${userInfo.id}> さん
+*総購入数:* ${depositInfo.totalPurchases.toLocaleString()}本 *サービス本数:* ${depositInfo.serviceCount.toLocaleString()}本
+*お支払残額:* ${depositInfo.paymentAmount}円 (お支払済: ${depositInfo.totalAmountPaid.toLocaleString()}円)
+`);
 });
 
-const administrators = ['U223M954Z'];
+const administrators = ["U223M954Z"];
 
 app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
   if (!administrators.includes(message.user)) {
@@ -160,28 +151,20 @@ app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
   const userName = context.matches[2];
   console.log(`deposit: ${deposit}, userName: ${userName}`);
 
-  // 入金処理
-  const paidCollection = db.collection('paid');
-  await paidCollection.add({
-    userName: userName,
-    deposit: deposit,
-    createddAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+  const uwayasu = new shop();
+  await uwayasu.addPaid(userName, deposit);
 
-  const depositTotal = await getDepositTotal(userName);
-  say(`${userName} さんから${deposit.toLocaleString()}ご入金頂きました。\n入金合計額は${depositTotal.toLocaleString()}円です。`);
-})
+  const depositTotal = await uwayasu.getDepositTotal(userName);
+  say(
+    `${userName} さんから${deposit.toLocaleString()}ご入金頂きました。\n入金合計額は${depositTotal.toLocaleString()}円です。`
+  );
+});
 
-async function getDepositTotal(userName: string) {
-  const paidCollection = db.collection('paid');
-  const queryRef = paidCollection.where('userName', '==', userName);
-  const filteredPaids = await queryRef.get();
-
-  let depositTotal = 0;
-  filteredPaids.docs.forEach(paid => {
-    depositTotal += paid.data().deposit
-  });
-  return depositTotal;
+async function getUserInfo(botToken: string, userId: string): Promise<IUser> {
+  return (await app.client.users.info({
+    token: botToken,
+    user: userId
+  }) as any).user;
 }
 
 exports.slack = functions.https.onRequest(expressReceiver.app);
