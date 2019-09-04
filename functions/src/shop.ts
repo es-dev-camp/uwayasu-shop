@@ -1,28 +1,24 @@
-import * as functions from 'firebase-functions';
-import admin = require('firebase-admin');
-import * as moment from 'moment';
+import * as functions from "firebase-functions";
+import admin = require("firebase-admin");
+import * as moment from "moment";
+
+admin.initializeApp(functions.config().firebase);
+const db: FirebaseFirestore.Firestore = admin.firestore();
 
 export class shop {
-  private db!: FirebaseFirestore.Firestore;
-
-  constructor() {
-    admin.initializeApp(functions.config().firebase);
-    this.db = admin.firestore();
-  }
-
   /**
    * Get total user deposit
    * @param userName - User name for deposit
    * @returns Deposit total amount
    */
   async getDepositTotal(userName: string): Promise<number> {
-    const paidCollection = this.db.collection('paid');
-    const queryRef = paidCollection.where('userName', '==', userName);
+    const paidCollection = db.collection("paid");
+    const queryRef = paidCollection.where("userName", "==", userName);
     const filteredPaids = await queryRef.get();
-  
+
     let depositTotal = 0;
     filteredPaids.docs.forEach(paid => {
-      depositTotal += paid.data().deposit
+      depositTotal += paid.data().deposit;
     });
     return depositTotal;
   }
@@ -32,9 +28,11 @@ export class shop {
    * @param userId - User Id for deposit
    * @returns Deposit total amount
    */
-  async getDepositInfo(userId: string, userName: string): Promise<IDepositInfo> {
-    const journals = this.db.collection('journal');
-    const queryRef = journals.where('user.id', '==', userId);
+  async getDepositInfo(
+    userId: string,
+    userName: string
+  ): Promise<IDepositInfo> {
+    const journals = db.collection("journal");
 
     const filteredJournals = await queryRef.get();
     const total = filteredJournals.docs.length;
@@ -55,7 +53,7 @@ export class shop {
    * @param deposit - Deposit amount
    */
   async addPaid(userName: string, deposit: number): Promise<void> {
-    const paidCollection = this.db.collection('paid');
+    const paidCollection = db.collection("paid");
     await paidCollection.add({
       userName: userName,
       deposit: deposit,
@@ -71,7 +69,7 @@ export class shop {
    * @returns Document reference id
    */
   async buy(userId: string, itemName: string, itemId: string): Promise<string> {
-    const journals = this.db.collection('journal');
+    const journals = db.collection("journal");
     const ref = await journals.add({
       user: userId,
       item: {
@@ -90,13 +88,19 @@ export class shop {
    * @param journalId - Target journal id
    */
   async cancel(userId: string, journalId: string): Promise<cancelStatus> {
-    const document = this.db.collection('journal').doc(journalId);
+    const document = db.collection("journal").doc(journalId);
     const journal = await document.get();
     if (journal.exists) {
       const data = journal.data();
       if (data && data.user.id !== userId) {
         return cancelStatus.purchaseOfOthers;
-      } else if (data && data.createdAt.seconds < moment().add(-1, 'h').unix()) {
+      } else if (
+        data &&
+        data.createdAt.seconds <
+          moment()
+            .add(-1, "h")
+            .unix()
+      ) {
         return cancelStatus.expired;
       } else {
         await document.delete();
