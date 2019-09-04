@@ -146,6 +146,7 @@ const administrators = ["U223M954Z"];
 app.message(/^paid (.+?) (.+)$/, async ({ message, context, say }) => {
   if (!administrators.includes(message.user)) {
     say(`<@${message.user}> さん 会計処理は管理者でないと行えません`);
+    return;
   }
   const deposit = Number.parseInt(context.matches[1]);
   const userName = context.matches[2];
