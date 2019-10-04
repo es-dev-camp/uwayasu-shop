@@ -103,7 +103,7 @@ export default class HelloWorld extends Super {
   get headers() {
     return [
       { text: "Datetime", value: "createdAt" },
-      { text: "UserName", value: "user.username" },
+      { text: "UserName", value: "user.name" },
       { text: "Item", value: "item.name" }
     ];
   }
